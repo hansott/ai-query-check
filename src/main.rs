@@ -9,9 +9,20 @@ use std::process::ExitCode;
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct HookOutput {
-    decision: &'static str,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reason: Option<String>,
+    hook_specific_output: HookSpecificOutput,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct HookSpecificOutput {
+    hook_event_name: &'static str,
+    decision: Decision,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct Decision {
+    behavior: &'static str,
 }
 
 fn main() -> ExitCode {
@@ -71,8 +82,12 @@ fn main() -> ExitCode {
 
     // All queries are read-only - auto-approve
     let output = HookOutput {
-        decision: "allow",
-        reason: Some("Read-only SQL query".to_string()),
+        hook_specific_output: HookSpecificOutput {
+            hook_event_name: "PermissionRequest",
+            decision: Decision {
+                behavior: "allow",
+            },
+        },
     };
     println!("{}", serde_json::to_string(&output).unwrap());
 

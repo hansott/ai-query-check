@@ -47,9 +47,7 @@ fn is_modifying_statement(stmt: &Statement) -> Option<String> {
         Statement::StartTransaction { .. } => None,
         Statement::Commit { .. } => None,
         Statement::Rollback { .. } => None,
-        Statement::SetVariable { .. } => None,
-        Statement::SetTimeZone { .. } => None,
-        Statement::SetNames { .. } => None,
+        Statement::Set(_) => None,
 
         // Data-modifying statements
         Statement::Insert(_) => Some("INSERT statement".to_string()),
@@ -125,6 +123,10 @@ mod tests {
         ));
         assert!(matches!(
             check_sql_readonly("SHOW CREATE TABLE users"),
+            QueryCheck::ReadOnly
+        ));
+        assert!(matches!(
+            check_sql_readonly("SHOW TABLES LIKE '%zen%'"),
             QueryCheck::ReadOnly
         ));
     }

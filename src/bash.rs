@@ -1,4 +1,22 @@
-use brush_parser::{ast, unquote_str, Parser, ParserOptions, SourceInfo};
+use brush_parser::{ast, Parser, ParserOptions, SourceInfo};
+
+/// Remove only the outer quotes from a bash word, preserving inner quotes.
+/// In bash, single quotes inside double quotes are literal characters.
+fn unquote_outer(s: &str) -> String {
+    let s = s.trim();
+    if s.len() < 2 {
+        return s.to_string();
+    }
+
+    let first = s.chars().next().unwrap();
+    let last = s.chars().last().unwrap();
+
+    if (first == '"' && last == '"') || (first == '\'' && last == '\'') {
+        s[1..s.len() - 1].to_string()
+    } else {
+        s.to_string()
+    }
+}
 
 /// Extract SQL queries from bash commands containing mysql -e "..."
 pub fn extract_sql_from_bash(command: &str) -> Result<Vec<String>, String> {
@@ -107,13 +125,13 @@ fn extract_sql_from_simple_command(cmd: &ast::SimpleCommand, queries: &mut Vec<S
     let mut words: Vec<String> = Vec::new();
 
     if let Some(word_or_name) = &cmd.word_or_name {
-        words.push(unquote_str(&word_or_name.value));
+        words.push(unquote_outer(&word_or_name.value));
     }
 
     if let Some(suffix) = &cmd.suffix {
         for item in &suffix.0 {
             if let ast::CommandPrefixOrSuffixItem::Word(word) = item {
-                words.push(unquote_str(&word.value));
+                words.push(unquote_outer(&word.value));
             }
         }
     }
@@ -146,7 +164,7 @@ fn extract_mysql_queries(words: &[String], queries: &mut Vec<String>) {
             i += 1;
         } else if let Some(sql) = word.strip_prefix("--execute=") {
             if !sql.is_empty() {
-                queries.push(sql.to_string());
+                queries.push(unquote_outer(sql));
             }
             i += 1;
         } else {
@@ -172,7 +190,7 @@ fn extract_psql_queries(words: &[String], queries: &mut Vec<String>) {
             i += 1;
         } else if let Some(sql) = word.strip_prefix("--command=") {
             if !sql.is_empty() {
-                queries.push(sql.to_string());
+                queries.push(unquote_outer(sql));
             }
             i += 1;
         } else {
@@ -247,5 +265,12 @@ mod tests {
         let cmd = r#"psql --command="EXPLAIN SELECT 1""#;
         let queries = extract_sql_from_bash(cmd).unwrap();
         assert_eq!(queries, vec!["EXPLAIN SELECT 1"]);
+    }
+
+    #[test]
+    fn test_mysql_show_tables_like() {
+        let cmd = r#"docker exec aikido-core-mysql mysql -uroot -p123 aikido -e "SHOW TABLES LIKE '%zen%';""#;
+        let queries = extract_sql_from_bash(cmd).unwrap();
+        assert_eq!(queries, vec!["SHOW TABLES LIKE '%zen%';"]);
     }
 }
