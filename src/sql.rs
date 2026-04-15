@@ -126,7 +126,7 @@ mod tests {
             QueryCheck::ReadOnly
         ));
         assert!(matches!(
-            check_sql_readonly("SHOW TABLES LIKE '%zen%'"),
+            check_sql_readonly("SHOW TABLES LIKE '%users%'"),
             QueryCheck::ReadOnly
         ));
     }
