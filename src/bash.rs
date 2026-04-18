@@ -269,7 +269,8 @@ mod tests {
 
     #[test]
     fn test_mysql_show_tables_like() {
-        let cmd = r#"docker exec my-mysql mysql -uroot -p123 mydb -e "SHOW TABLES LIKE '%users%';""#;
+        let cmd =
+            r#"docker exec my-mysql mysql -uroot -p123 mydb -e "SHOW TABLES LIKE '%users%';""#;
         let queries = extract_sql_from_bash(cmd).unwrap();
         assert_eq!(queries, vec!["SHOW TABLES LIKE '%users%';"]);
     }

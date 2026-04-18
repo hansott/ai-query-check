@@ -56,10 +56,7 @@ fn main() -> ExitCode {
     for query in &sql_queries {
         match sql::check_sql_readonly(query) {
             sql::QueryCheck::ReadOnly => {
-                eprintln!(
-                    "[ai-query-check] Auto-approving: {}",
-                    truncate(query, 80)
-                );
+                eprintln!("[ai-query-check] Auto-approving: {}", truncate(query, 80));
             }
             sql::QueryCheck::Modifying(reason) => {
                 // Let user review modifying queries
@@ -71,10 +68,7 @@ fn main() -> ExitCode {
                 return ExitCode::SUCCESS; // Normal permission prompt
             }
             sql::QueryCheck::ParseError(err) => {
-                eprintln!(
-                    "[ai-query-check] Parse error, requires approval: {}",
-                    err
-                );
+                eprintln!("[ai-query-check] Parse error, requires approval: {}", err);
                 return ExitCode::SUCCESS; // Normal permission prompt
             }
         }
@@ -84,9 +78,7 @@ fn main() -> ExitCode {
     let output = HookOutput {
         hook_specific_output: HookSpecificOutput {
             hook_event_name: "PermissionRequest",
-            decision: Decision {
-                behavior: "allow",
-            },
+            decision: Decision { behavior: "allow" },
         },
     };
     println!("{}", serde_json::to_string(&output).unwrap());
